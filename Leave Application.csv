@@ -1,0 +1,8 @@
+LeaveID,Date Filed,Employee Number,Last Name,First Name,Type of Leave Applied,Number of Days,Start Date,End Date,Application Status,Reason
+1,03/20/2025,10001,Crisosto,Jose,Vacation Leave,1,03/21/2025,03/21/2025,Denied,Birthday
+2,03/20/2025,10002,Mata,Christian,Sick Leave,1,04/01/2025,04/01/2025,Approved,sick
+3,03/20/2025,10001,Crisosto,Jose,Vacation Leave,1,01/01/2026,01/01/2026,Filed,Birthday
+4,03/20/2025,10001,Crisosto,Jose,Sick Leave,1,01/01/2026,01/01/2026,Approved,birhtday
+5,03/20/2025,10001,Crisosto,Jose,Vacation Leave,1,02/01/2026,02/01/2026,Approved,sick
+6,03/20/2025,10018,Del Rosario,Tomas,Sick Leave,1,01/01/2026,01/01/2026,Filed,im sick
+7,03/28/2025,10001,Crisosto,Jose,Vacation Leave,1,01/01/2026,01/01/2026,Filed,im sick
