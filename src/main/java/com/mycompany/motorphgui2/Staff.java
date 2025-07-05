@@ -1,5 +1,6 @@
 package com.mycompany.motorphgui2;
 
+import com.mycompany.motorphgui2.entity.Employee;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
@@ -525,6 +526,10 @@ String file = "Remaining_Leave.csv";
                 Float.parseFloat(getClothAllowance());
 
         return format("%.2f",gross);
+    }
+
+    public Employee toEmployeeEntity() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 }
 

@@ -1,5 +1,6 @@
 package com.mycompany.motorphgui2.dao;
 
+import com.mycompany.motorphgui2.Staff;
 import com.mycompany.motorphgui2.entity.Employee;
 import com.mycompany.motorphgui2.util.SessionFactoryUtil;
 
@@ -71,5 +72,9 @@ public class EmployeeDaoImpl implements Dao<Employee, Integer> {
                 .setParameter("dept", department)
                 .list();
         }
+    }
+
+    public void save(Staff staff) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 }

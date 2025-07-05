@@ -10,12 +10,14 @@ import com.mycompany.motorphgui2.LoginResult;
 import com.mycompany.motorphgui2.Permission;
 import com.mycompany.motorphgui2.Role;
 import com.mycompany.motorphgui2.Staff;
-import com.opencsv.CSVReader;
+import com.mycompany.motorphgui2.dao.EmployeeDaoImpl;
+import com.mycompany.motorphgui2.entity.Employee;
 import com.opencsv.exceptions.CsvValidationException;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
@@ -42,7 +44,27 @@ public class MainFrame extends javax.swing.JDialog {
         
         Staff staff = new Staff();
         table1.setModel(new DefaultTableModel()); // Clear previous data
-        table1.setModel(staff.tableDetails("MotorPH Employee Data.csv"));
+        EmployeeDaoImpl employeeDao = new EmployeeDaoImpl();
+List<Employee> employees = employeeDao.getAll();
+
+DefaultTableModel model = new DefaultTableModel(new Object[]{
+    "Employee No.", "Last Name", "First Name", "SSS", "Philhealth", "TIN", "PAGIBIG"
+}, 0);
+
+for (Employee e : employees) {
+    model.addRow(new Object[]{
+        e.getEmployeeID(),
+        e.getLastName(),
+        e.getFirstName(),
+        e.getSssNumber(),
+        e.getPhilHealthNumber(),
+        e.getTinNumber(),
+        e.getPagibigNumber()
+    });
+}
+
+table1.setModel(model);
+
     }
 
     /**
@@ -261,45 +283,52 @@ public class MainFrame extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    public void loadEmployeeData() {
-            DefaultTableModel model = (DefaultTableModel) table1.getModel();
-            model.setRowCount(0); // Clear table
+   public void loadEmployeeData() {
+    DefaultTableModel model = (DefaultTableModel) table1.getModel();
+    model.setRowCount(0); // Clear table
 
-            String filename = "MotorPH Employee Data.csv";
-            try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-                String line;
-                boolean firstLine = true;
+    EmployeeDaoImpl employeeDao = new EmployeeDaoImpl();
+    List<Employee> employees = employeeDao.getAll();
 
-                while ((line = br.readLine()) != null) {
-                    if (firstLine) { // Skip header
-                        firstLine = false;
-                        continue;
-                    }
-
-                    String[] data = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
-
-                    for (int i = 0; i < data.length; i++) {
-                        data[i] = data[i].trim().replaceAll("^\"|\"$", "");
-                        if (data[i].isEmpty()) {
-                            data[i] = "N/A"; 
-                        }
-                    }
-
-                    model.addRow(data);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error loading employee data.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-
-            model.fireTableDataChanged();
-            }
-
-
-    public void updateEmployeeTable() {
-    // Reload the employee data
-        loadEmployeeData();  
+    for (Employee e : employees) {
+        model.addRow(new Object[]{
+            e.getEmployeeID(),
+            e.getLastName(),
+            e.getFirstName(),
+            e.getSssNumber(),
+            e.getPhilHealthNumber(),
+            e.getTinNumber(),
+            e.getPagibigNumber()
+        });
     }
+
+    model.fireTableDataChanged();
+}
+
+
+
+ 
+
+   public void updateEmployeeTable() {
+    DefaultTableModel model = (DefaultTableModel) table1.getModel();
+    model.setRowCount(0); // Clear table
+
+    List<Employee> employees = new EmployeeDaoImpl().getAll();
+    for (Employee staff : employees) {
+        model.addRow(new Object[]{
+            staff.getEmployeeNumber(),
+            staff.getLastName(),
+            staff.getFirstName(),
+            staff.getSSSNumber(),
+            staff.getPhilHealthNumber(),
+            staff.getTIN(),
+            staff.getPagibigNumber()
+        });
+    }
+
+    model.fireTableDataChanged();
+}
+
     
    
     
@@ -326,35 +355,32 @@ public class MainFrame extends javax.swing.JDialog {
     }//GEN-LAST:event_DeleteRecord
 
     private void leavebtnMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_leavebtnMouseClicked
-        Staff staff = new Staff();
-           String filename = "MotorPH Employee Data.csv";
+        Staff staff = new Staff(); // Keep this if needed
 
-            try {
-            // Get current logged-in employee
-               LoginResult currentUser = LoginResult.getCurrentUser();
+    try {
+        // Get current logged-in employee
+        LoginResult currentUser = LoginResult.getCurrentUser();
 
-               if (currentUser == null || !currentUser.isValid()) {
-                   JOptionPane.showMessageDialog(this, "No user is logged in.", "Login Error", JOptionPane.ERROR_MESSAGE);
-                   return; // Exit if no user is logged in
-               }
-
-               String employeeID = currentUser.getEmployeeID();
-
-               // Fetch employee details using EmployeeDataUtil
-               staff = EmployeeDataUtil.fetchEmployeeDetails(employeeID);
-
-               // Check if staff data was found
-               if (staff.getLastName() != null && staff.getFirstName() != null) {
-                   // Open LeaveFrame with pre-filled staff details
-                   LeaveFrame leaveframe = new LeaveFrame(staff);
-                   leaveframe.setVisible(true);
-               } else {
-                   JOptionPane.showMessageDialog(this, "Employee details not found in the system."+ employeeID, "Error", JOptionPane.ERROR_MESSAGE);
-               }
-
-           } catch (Exception ex) {
-               Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+        if (currentUser == null || !currentUser.isValid()) {
+            JOptionPane.showMessageDialog(this, "No user is logged in.", "Login Error", JOptionPane.ERROR_MESSAGE);
+            return; // Exit if no user is logged in
         }
+
+        String employeeID = currentUser.getEmployeeID();
+
+        // Fetch employee details from database (uses Hibernate)
+        staff = EmployeeDataUtil.fetchEmployeeDetails(employeeID);
+
+        if (staff.getLastName() != null && staff.getFirstName() != null) {
+            LeaveFrame leaveframe = new LeaveFrame(staff);
+            leaveframe.setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Employee details not found in the system: " + employeeID, "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+    } catch (Exception ex) {
+        Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+    }
     }//GEN-LAST:event_leavebtnMouseClicked
 
     private void PaySlip(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_PaySlip
@@ -402,12 +428,9 @@ public class MainFrame extends javax.swing.JDialog {
          AddEmployeeFrame addframe = new AddEmployeeFrame(this);
          addframe.setVisible(true);
 
-         String filename = "MotorPH Employee Data.csv";
-         try {
-             table1.setModel(staff.tableDetails(filename));
-         } catch (IOException | CsvValidationException ex) {
-             Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
-         }
+         loadEmployeeData();
+
+        
     }//GEN-LAST:event_AddEmployee
 
     private void viewbtnMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_viewbtnMouseClicked

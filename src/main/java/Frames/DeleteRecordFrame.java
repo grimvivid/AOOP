@@ -5,6 +5,8 @@
 package Frames;
 
 import com.mycompany.motorphgui2.*;
+import com.mycompany.motorphgui2.dao.EmployeeDaoImpl;
+import com.mycompany.motorphgui2.entity.Employee;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import java.io.FileNotFoundException;
@@ -254,48 +256,25 @@ public class DeleteRecordFrame extends javax.swing.JDialog {
 
     private void DeleteRecord(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_DeleteRecord
         // define roles for deletion
-        if (!currentUserRole.hasPermission(currentUserRole, Permission.Delete)) {
-            JOptionPane.showMessageDialog(this, "You do not have permission to delete employee records.", "Access Denied", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+       try {
+    Employee employeeToDelete = new Employee();
+    employeeToDelete.setEmployeeID(Integer.parseInt(employeeNumberTF.getText())); // Assuming it's numeric
 
-        Staff staff = new Staff();
-        String filename = "MotorPH Employee Data.csv";
+    // Use Hibernate DAO to delete
+    new EmployeeDaoImpl().delete(employeeToDelete);
 
-        staff.setEmployeeNumber(employeeNumberTF.getText());
-        staff.setLastName(lastNameTF.getText());
-        staff.setFirstName(firstNameTF.getText());
-        staff.setBirthday(birthdayTF.getText());
-        staff.setAddress(addressTF.getText());
-        staff.setPhoneNumber(phoneNumberTF.getText());
-        staff.setSSSNumber(SSSNumberTF.getText());
-        staff.setPhilHealthNumber(PhilHealthNumberTF.getText());
-        staff.setTIN(TINNumberTF.getText());
-        staff.setPagibigNumber(pagibigTF.getText());
-        staff.setStatus(statusCB.getSelectedItem().toString());
-        staff.setPosition(positionCB.getSelectedItem().toString());
-        staff.setSuperior(superiorTF.getText());
-        staff.setBasic(basicSalaryTF.getText());
-        staff.setRiceAllowance(riceAllowanceTF.getText());
-        staff.setPhoneAllowance(phoneAllowanceTF.getText());
-        staff.setClothAllowance(clothingAllowanceTF.getText());
-        staff.setSemiMonthlyRate(semiMonthlyRateTF.getText());
-        staff.setHourlyRate(hourlyRateTF.getText());
-        
-        try{
-            staff.DeleteEmployee(filename);
-            clearFields();
-            JOptionPane.showMessageDialog(this, "Employee Record is deleted.");
-            
-            
-              if (mainFrame != null) {
-            mainFrame.updateEmployeeTable();
-        }
-            
-            dispose();
-        } catch (IOException | CsvValidationException ex) {
-            Logger.getLogger(DeleteRecordFrame.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    JOptionPane.showMessageDialog(this, "Employee Record deleted from database.");
+
+    if (mainFrame != null) {
+        mainFrame.updateEmployeeTable();
+    }
+
+    dispose();
+} catch (Exception ex) {
+    Logger.getLogger(DeleteRecordFrame.class.getName()).log(Level.SEVERE, null, ex);
+    JOptionPane.showMessageDialog(this, "Failed to delete employee.", "Error", JOptionPane.ERROR_MESSAGE);
+}
+
     }//GEN-LAST:event_DeleteRecord
 
         private void clearFields() {

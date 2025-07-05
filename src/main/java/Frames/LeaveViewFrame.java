@@ -45,11 +45,7 @@ public class LeaveViewFrame extends javax.swing.JDialog {
         staff = new Staff();
         String filename = "Leave Application.csv";
 
-        try {
-            leaveStatusTable.setModel(staff.leaveStatus(filename));
-        } catch (IOException | CsvValidationException ex) {
-            JOptionPane.showMessageDialog(this, "Error loading leave data: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        leaveStatusTable.setModel(LeaveDaoImpl.getLeaveStatusTableModel());
         
         
     }
@@ -149,13 +145,11 @@ public class LeaveViewFrame extends javax.swing.JDialog {
     }//GEN-LAST:event_denyButton1ActionPerformed
 
     private void updateLeaveStatus(String status) {
-        if (!currentUserRole.hasPermission(currentUserRole, Permission.ProcessLeave)) {
-                JOptionPane.showMessageDialog(this, "You do not have permission to process leave.", "Access Denied", JOptionPane.ERROR_MESSAGE);
+    if (!currentUserRole.hasPermission(currentUserRole, Permission.ProcessLeave)) {
+        JOptionPane.showMessageDialog(this, "You do not have permission to process leave.", "Access Denied", JOptionPane.ERROR_MESSAGE);
         return;
-        }
-        
-        
-        
+    }
+
     int selectedRow = leaveStatusTable.getSelectedRow();
 
     if (selectedRow == -1) {
@@ -163,53 +157,24 @@ public class LeaveViewFrame extends javax.swing.JDialog {
         return;
     }
 
-    String leaveID = leaveStatusTable.getValueAt(selectedRow, 0).toString(); // Get Leave ID
-    List<String[]> csvData = new ArrayList<>();
-    String fileName = "Leave Application.csv";
+    String leaveId = leaveStatusTable.getValueAt(selectedRow, 0).toString(); // Leave ID
 
-    try (CSVReader csvReader = new CSVReader(new FileReader(fileName))) {
-        String[] line;
+    boolean updated = new LeaveDaoImpl().updateLeaveStatus(Integer.parseInt(leaveId), status);
 
-        while ((line = csvReader.readNext()) != null) {
-            if (line[0].equals(leaveID)) {
-                line[9] = status; // Update the "Application Status" column
-            }
-            csvData.add(line);
-        }
-    } catch (IOException | CsvValidationException ex) {
-        Logger.getLogger(LeaveViewFrame.class.getName()).log(Level.SEVERE, null, ex);
+    if (updated) {
+        JOptionPane.showMessageDialog(this, "Leave status updated to: " + status, "Success", JOptionPane.INFORMATION_MESSAGE);
+        updateLeaveStatusTable(); // refresh table
+    } else {
+        JOptionPane.showMessageDialog(this, "Failed to update leave status.", "Error", JOptionPane.ERROR_MESSAGE);
     }
-
-    // Write updated data back to CSV
-    try (CSVWriter csvWriter = new CSVWriter(new FileWriter(fileName))) {
-        csvWriter.writeAll(csvData);
-    } catch (IOException ex) {
-        Logger.getLogger(LeaveViewFrame.class.getName()).log(Level.SEVERE, null, ex);
-    }
-
-    JOptionPane.showMessageDialog(this, "Leave status updated to: " + status, "Update Successful", JOptionPane.INFORMATION_MESSAGE);
-
-    // Refresh the table after updating
-    updateLeaveStatusTable();
 }
+
      
  
     private void updateLeaveStatusTable() {
-    String fileName = "Leave Application.csv"; // Filename for leave records
-
-    try {
-        // Create an instance of Staff to call leaveStatus
-        Staff staff = new Staff();
-
-        // Populate the table with updated data
-        leaveStatusTable.setModel(staff.leaveStatus(fileName));
-
-    } catch (IOException | CsvValidationException ex) {
-        Logger.getLogger(LeaveViewFrame.class.getName()).log(Level.SEVERE, null, ex);
-        JOptionPane.showMessageDialog(this, "Error updating leave status table.", "Error", JOptionPane.ERROR_MESSAGE);
-    }
+    leaveStatusTable.setModel(LeaveDaoImpl.getLeaveStatusTableModel());
 }
-    
+
     
     
     

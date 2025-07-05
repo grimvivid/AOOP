@@ -12,6 +12,7 @@ import com.mycompany.motorphgui2.LoginResult;
 import com.mycompany.motorphgui2.Permission;
 import com.mycompany.motorphgui2.Role;
 import com.mycompany.motorphgui2.Staff;
+import com.mycompany.motorphgui2.dao.EmployeeDaoImpl;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import java.io.FileNotFoundException;
@@ -34,6 +35,7 @@ public class ViewRecordFrame extends javax.swing.JDialog {
     private Role currentUserRole;
     private Staff staff;
     private MainFrame mainFrame; // 
+    private String filename;
 
     
     public ViewRecordFrame(String employeenum, MainFrame mainFrame) {
@@ -266,8 +268,9 @@ public class ViewRecordFrame extends javax.swing.JDialog {
    
 
     private void Update(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_Update
-        String filename = "MotorPH Employee Data.csv";
-        Staff staff = new Staff();
+        EmployeeDaoImpl employeeDao = new EmployeeDaoImpl();
+employeeDao.update(staff.toEmployeeEntity()); // assuming toEmployeeEntity() maps Staff to Employee
+
         
         if (!currentUserRole.hasPermission(currentUserRole, Permission.Update)) {
             JOptionPane.showMessageDialog(this, "You do not have permission to edit employee records.", "Access Denied", JOptionPane.ERROR_MESSAGE);
@@ -310,9 +313,11 @@ public class ViewRecordFrame extends javax.swing.JDialog {
 
                 dispose();
 
-            } catch (IllegalArgumentException | IOException | CsvValidationException ex) {
+            } catch (IllegalArgumentException | IOException  ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Input Error", JOptionPane.ERROR_MESSAGE);
-            }         
+            } catch (CsvValidationException ex) {
+            Logger.getLogger(ViewRecordFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }         
     }//GEN-LAST:event_Update
  
     private void clearFields() {

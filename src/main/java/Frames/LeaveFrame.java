@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import javax.swing.table.TableModel;
 
 
 /**
@@ -33,11 +34,11 @@ public class LeaveFrame extends javax.swing.JDialog {
         initComponents();
         this.setModalityType(ModalityType.APPLICATION_MODAL);
         
-        String filename = "Remaining_Leave.csv";
+        
         employeeNumberTF.setText(staff.getEmployeeNumber());
         firstNameTF.setText(staff.getFirstName());
         lastNameTF.setText(staff.getLastName());
-        leaveTable.setModel( staff.leaveDetails(filename));
+        leaveTable.setModel(LeaveTableUtil.getLeaveTableModel(staff.getEmployeeNumber()));
         dateFiledTF.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")));
         
     }
@@ -445,9 +446,11 @@ public class LeaveFrame extends javax.swing.JDialog {
 
            try {
                // Check if leave is allowed
-               if (staff.LeaveIsAllowed(filename, leaveType, days)) {
-                   staff.ApplyLeave(filename, leaveType, days);
-                   staff.createLeaveApplication(fileDate, leaveType, days, startDate, endDate, reason);
+               if (LeaveValidator.isLeaveAllowed(employeeNumber, leaveType, days)) {
+    LeaveDaoImpl dao = new LeaveDaoImpl();
+    dao.applyLeave(employeeNumber, leaveType, days);
+    dao.createLeaveApplication(employeeNumber, fileDate, leaveType, days, startDate, endDate, reason);
+
 
                    JOptionPane.showMessageDialog(this, "Leave Submitted Successfully!", "Leave Application", JOptionPane.INFORMATION_MESSAGE);
 
@@ -552,4 +555,14 @@ public class LeaveFrame extends javax.swing.JDialog {
     private javax.swing.JComboBox<String> year2CB;
     private javax.swing.JLabel year2Label;
     // End of variables declaration//GEN-END:variables
+
+    private static class LeaveTableUtil {
+
+        private static TableModel getLeaveTableModel(String employeeNumber) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        public LeaveTableUtil() {
+        }
+    }
 }

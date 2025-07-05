@@ -10,12 +10,15 @@ import com.mycompany.motorphgui2.Employees;
 import com.mycompany.motorphgui2.FormUtil;
 import com.mycompany.motorphgui2.Role;
 import com.mycompany.motorphgui2.Staff;
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvValidationException;
-import java.io.FileReader;
 import java.io.IOException;
 import javax.swing.JOptionPane;
+import com.mycompany.motorphgui2.dao.EmployeeDaoImpl;
+import com.mycompany.motorphgui2.entity.Employee;
+import com.mycompany.motorphgui2.entity.Compensation;
+import com.mycompany.motorphgui2.entity.Address;
 
+import java.sql.Date;
+import java.util.List;
 /**
  *
  * 
@@ -24,30 +27,18 @@ public class AddEmployeeFrame extends javax.swing.JDialog {
     private MainFrame mainFrame; // 
     private Role currentUserRole;
     private Staff staff;
-    private String getNextEmployeeID() {
-    String filename = "MotorPH Employee Data.csv";
-    int maxID = 0;
-
-    try (CSVReader reader = new CSVReader(new FileReader(filename))) {
-        String[] nextLine;
-        reader.readNext(); // Skip header if it exists
-        
-        while ((nextLine = reader.readNext()) != null) {
-            try {
-                int currentID = Integer.parseInt(nextLine[0].trim()); // Assuming EmployeeID is in the first column
-                if (currentID > maxID) {
-                    maxID = currentID;
-                }
-            } catch (NumberFormatException e) {
-                System.err.println("Invalid Employee ID found in CSV: " + nextLine[0]);
-            }
-        }
-    } catch (IOException | CsvValidationException e) {
-        e.printStackTrace();
+   private String getNextEmployeeID() {
+    List<Employee> employees = new EmployeeDaoImpl().getAll();
+    int maxId = 0;
+    for (Employee emp : employees) {
+        try {
+            int id = Integer.parseInt(emp.getEmployeeNumber());
+            if (id > maxId) maxId = id;
+        } catch (NumberFormatException ignored) {}
     }
-
-    return String.valueOf(maxID + 1);
+    return String.valueOf(maxId + 1);
 }
+
 
     
     
@@ -255,6 +246,11 @@ public class AddEmployeeFrame extends javax.swing.JDialog {
                 AddEmployee(evt);
             }
         });
+        addButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                addButtonActionPerformed(evt);
+            }
+        });
         getContentPane().add(addButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 550, 60, 30));
 
         closeButton.setBackground(new java.awt.Color(204, 204, 204));
@@ -311,8 +307,8 @@ public class AddEmployeeFrame extends javax.swing.JDialog {
                staff.setHourlyRate(staff.validateNumber(hourlyRateTF.getText(), "Hourly Rate"));
 
                // === ADD EMPLOYEE TO CSV ===
-               String filename = "MotorPH Employee Data.csv";
-               staff.AddEmployee(filename);
+               new EmployeeDaoImpl().save(staff);
+
 
                // === RESET FIELDS AFTER ADDING ===
                
@@ -324,7 +320,7 @@ public class AddEmployeeFrame extends javax.swing.JDialog {
                    mainFrame.updateEmployeeTable();
                }
 
-           } catch (IllegalArgumentException | IOException ex) {
+           } catch (IllegalArgumentException ex) {
                JOptionPane.showMessageDialog(this, ex.getMessage(), "Input Error", JOptionPane.ERROR_MESSAGE);
            }
 
@@ -348,6 +344,10 @@ public class AddEmployeeFrame extends javax.swing.JDialog {
             evt.consume();
         }        // TODO add your handling code here:
     }//GEN-LAST:event_employeeNumberTFKeyTyped
+
+    private void addButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addButtonActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_addButtonActionPerformed
 
     /**
      * @param args the command line arguments
