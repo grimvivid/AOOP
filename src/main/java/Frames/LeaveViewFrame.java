@@ -34,22 +34,15 @@ public class LeaveViewFrame extends javax.swing.JDialog {
 
     private Role currentUserRole;
     private Staff staff;
-    /**
-     * Creates new form LeaveViewFrame
-     */
-   public LeaveViewFrame(javax.swing.JDialog parent, boolean modal) {
+
+    public LeaveViewFrame(javax.swing.JDialog parent, boolean modal) {
         super(parent, modal);
         initComponents();
         this.currentUserRole = LoginResult.getCurrentUser().getRole();
 
-        staff = new Staff();
-        String filename = "Leave Application.csv";
-
+        // MySQL integration: fetch leave status
         leaveStatusTable.setModel(LeaveDaoImpl.getLeaveStatusTableModel());
-        
-        
     }
-    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -144,38 +137,35 @@ public class LeaveViewFrame extends javax.swing.JDialog {
        updateLeaveStatus("Denied");
     }//GEN-LAST:event_denyButton1ActionPerformed
 
-    private void updateLeaveStatus(String status) {
-    if (!currentUserRole.hasPermission(currentUserRole, Permission.ProcessLeave)) {
-        JOptionPane.showMessageDialog(this, "You do not have permission to process leave.", "Access Denied", JOptionPane.ERROR_MESSAGE);
-        return;
+   private void updateLeaveStatus(String status) {
+        if (!currentUserRole.hasPermission(currentUserRole, Permission.ProcessLeave)) {
+            JOptionPane.showMessageDialog(this, "You do not have permission to process leave.", "Access Denied", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int selectedRow = leaveStatusTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a row.", "Selection Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int leaveId = Integer.parseInt(leaveStatusTable.getValueAt(selectedRow, 0).toString());
+
+        boolean updated = new LeaveDaoImpl().updateLeaveStatus(leaveId, status);
+
+        if (updated) {
+            JOptionPane.showMessageDialog(this, "Leave status updated to: " + status);
+            updateLeaveStatusTable();
+        } else {
+            JOptionPane.showMessageDialog(this, "Failed to update leave status.");
+        }
     }
 
-    int selectedRow = leaveStatusTable.getSelectedRow();
-
-    if (selectedRow == -1) {
-        JOptionPane.showMessageDialog(this, "Please select a row.", "Selection Error", JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-
-    String leaveId = leaveStatusTable.getValueAt(selectedRow, 0).toString(); // Leave ID
-
-    boolean updated = new LeaveDaoImpl().updateLeaveStatus(Integer.parseInt(leaveId), status);
-
-    if (updated) {
-        JOptionPane.showMessageDialog(this, "Leave status updated to: " + status, "Success", JOptionPane.INFORMATION_MESSAGE);
-        updateLeaveStatusTable(); // refresh table
-    } else {
-        JOptionPane.showMessageDialog(this, "Failed to update leave status.", "Error", JOptionPane.ERROR_MESSAGE);
-    }
-}
-
-     
- 
     private void updateLeaveStatusTable() {
-    leaveStatusTable.setModel(LeaveDaoImpl.getLeaveStatusTableModel());
-}
+        leaveStatusTable.setModel(LeaveDaoImpl.getLeaveStatusTableModel());
+    }
 
-    
+   
     
     
     /**

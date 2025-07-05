@@ -2,6 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
+
 package Frames;
 
 import com.mycompany.motorphgui2.CredentialsManager;
@@ -13,9 +14,6 @@ import com.mycompany.motorphgui2.Staff;
 import com.mycompany.motorphgui2.dao.EmployeeDaoImpl;
 import com.mycompany.motorphgui2.entity.Employee;
 import com.opencsv.exceptions.CsvValidationException;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
@@ -23,49 +21,39 @@ import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-/**
- *
- * 
- */
-public class MainFrame extends javax.swing.JDialog {
+public class MainFrame extends javax.swing.JFrame {
 
-    /**
-     * Creates new form MainFrame
-     * @throws java.io.IOException
-     * @throws java.io.FileNotFoundException
-     * @throws com.opencsv.exceptions.CsvValidationException
-     */
-    
     private Role currentUserRole;
-    
-    public MainFrame() throws IOException, FileNotFoundException, CsvValidationException {
-        initComponents();
-        this.setModalityType(ModalityType.APPLICATION_MODAL);
-        
-        Staff staff = new Staff();
-        table1.setModel(new DefaultTableModel()); // Clear previous data
-        EmployeeDaoImpl employeeDao = new EmployeeDaoImpl();
-List<Employee> employees = employeeDao.getAll();
 
-DefaultTableModel model = new DefaultTableModel(new Object[]{
-    "Employee No.", "Last Name", "First Name", "SSS", "Philhealth", "TIN", "PAGIBIG"
-}, 0);
-
-for (Employee e : employees) {
-    model.addRow(new Object[]{
-        e.getEmployeeID(),
-        e.getLastName(),
-        e.getFirstName(),
-        e.getSssNumber(),
-        e.getPhilHealthNumber(),
-        e.getTinNumber(),
-        e.getPagibigNumber()
-    });
+    public MainFrame() throws IOException, CsvValidationException {
+    initComponents(); // ✅ This just calls the real method below
+    this.setLocationRelativeTo(null);
+    loadEmployeeData();
 }
 
-table1.setModel(model);
+  
 
+    public void loadEmployeeData() {
+        DefaultTableModel model = (DefaultTableModel) table1.getModel();
+        model.setRowCount(0);
+
+        EmployeeDaoImpl employeeDao = new EmployeeDaoImpl();
+        List<Employee> employees = employeeDao.getAll();
+
+        for (Employee e : employees) {
+            model.addRow(new Object[]{
+                e.getEmployeeID(),
+                e.getLastName(),
+                e.getFirstName(),
+                e.getSssNumber(),
+                e.getPhilHealthNumber(),
+                e.getTinNumber(),
+                e.getPagibigNumber()
+            });
+        }
+        model.fireTableDataChanged();
     }
+
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -283,29 +271,7 @@ table1.setModel(model);
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-   public void loadEmployeeData() {
-    DefaultTableModel model = (DefaultTableModel) table1.getModel();
-    model.setRowCount(0); // Clear table
-
-    EmployeeDaoImpl employeeDao = new EmployeeDaoImpl();
-    List<Employee> employees = employeeDao.getAll();
-
-    for (Employee e : employees) {
-        model.addRow(new Object[]{
-            e.getEmployeeID(),
-            e.getLastName(),
-            e.getFirstName(),
-            e.getSssNumber(),
-            e.getPhilHealthNumber(),
-            e.getTinNumber(),
-            e.getPagibigNumber()
-        });
-    }
-
-    model.fireTableDataChanged();
-}
-
-
+ 
 
  
 
@@ -468,48 +434,30 @@ table1.setModel(model);
 
     private void viewLeaveStatusMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_viewLeaveStatusMouseClicked
         // Open LeaveViewFrame on click
-           LeaveViewFrame leaveFrame = new LeaveViewFrame(this, true);
-           leaveFrame.setVisible(true);
-    }//GEN-LAST:event_viewLeaveStatusMouseClicked
+         try {
+            LeaveViewFrame leaveFrame = new LeaveViewFrame(new javax.swing.JDialog(), true);
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(MainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(MainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(MainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(MainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            leaveFrame.setVisible(true);
+        } catch (Exception ex) {
+            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(this, "Failed to open Leave View window.", "Error", JOptionPane.ERROR_MESSAGE);
         }
-        //</editor-fold>
+    }
 
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    new MainFrame().setVisible(true);
-                } catch (IOException | CsvValidationException ex) {
-                    Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
-                }
+    public static void main(String args[]) {
+        java.awt.EventQueue.invokeLater(() -> {
+            try {
+                new MainFrame().setVisible(true);
+            } catch (IOException | CsvValidationException ex) {
+                Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
         });
-    }
+
+    // Additional methods and event listeners (AddEmployee, PaySlip, DeleteRecord etc.) remain unchanged.
+
+    }//GEN-LAST:event_viewLeaveStatusMouseClicked
+
+  
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton CreateLoginUser;
