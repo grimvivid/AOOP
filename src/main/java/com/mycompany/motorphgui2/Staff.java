@@ -194,7 +194,32 @@ public class Staff extends Employees {
                       Float.parseFloat(getClothAllowance());
         return format("%.2f", gross);
     }
-  
+
+    /**
+     * Computes hours worked between two dates (excluding weekends).
+     * Used for payroll calculation.
+     */
+    public float ComputeHoursWorked(String startDateStr, String endDateStr) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");  // Allow single-digit month/day
+            LocalDate start = LocalDate.parse(startDateStr, formatter);
+            LocalDate end = LocalDate.parse(endDateStr, formatter);
+
+            float totalHours = 0;
+            while (!start.isAfter(end)) {
+                if (start.getDayOfWeek().getValue() < 6) { // Monday to Friday
+                    totalHours += 8;
+                }
+                start = start.plusDays(1);
+            }
+
+            return totalHours;
+        } catch (Exception e) {
+            System.out.println("Error parsing dates: " + e.getMessage());
+            return 0;
+        }
+    }
+
 }
 
 

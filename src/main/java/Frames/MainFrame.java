@@ -370,7 +370,7 @@ public class MainFrame extends javax.swing.JFrame {
                     }
 
                     // Open the Payslip Frame
-                    PayslipFrame payslipFrame = new PayslipFrame(staff);
+                    PayslipFrame payslipFrame = new PayslipFrame(staff.getEmployeeNumber());
                     payslipFrame.setVisible(true);
 
                 } catch (Exception ex) {

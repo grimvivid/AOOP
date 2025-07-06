@@ -1,13 +1,12 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JDialog.java to edit this template
- */
+
 package Frames;
+
 import com.mycompany.motorphgui2.Employees;
 import com.mycompany.motorphgui2.LoginResult;
 import com.mycompany.motorphgui2.Permission;
 import com.mycompany.motorphgui2.Role;
 import com.mycompany.motorphgui2.Staff;
+import com.mycompany.motorphgui2.dao.LeaveRequestDaoImpl;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
@@ -40,8 +39,31 @@ public class LeaveViewFrame extends javax.swing.JDialog {
         initComponents();
         this.currentUserRole = LoginResult.getCurrentUser().getRole();
 
-        // MySQL integration: fetch leave status
-        leaveStatusTable.setModel(LeaveDaoImpl.getLeaveStatusTableModel());
+        leaveStatusTable.setModel(loadLeaveStatusFromCSV());
+        
+    }
+    
+    private javax.swing.table.TableModel loadLeaveStatusFromCSV() {
+        String filePath = "Leave Application.csv";
+        String[] columnNames = {
+            "Leave ID", "Date Filed", "Employee Number", "Last Name", "First Name",
+            "Type of Leave Applied", "Number of Days", "Start Date", "End Date", "Application Status", "Reason"
+        };
+
+        List<String[]> rowData = new ArrayList<>();
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+            String[] line;
+            reader.readNext(); // Skip header
+            while ((line = reader.readNext()) != null) {
+                rowData.add(line);
+            }
+        } catch (IOException | CsvValidationException e) {
+            Logger.getLogger(LeaveViewFrame.class.getName()).log(Level.SEVERE, null, e);
+            JOptionPane.showMessageDialog(this, "Error loading leave data.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+        String[][] data = rowData.toArray(new String[0][]);
+        return new javax.swing.table.DefaultTableModel(data, columnNames);
     }
 
     /**
@@ -137,7 +159,7 @@ public class LeaveViewFrame extends javax.swing.JDialog {
        updateLeaveStatus("Denied");
     }//GEN-LAST:event_denyButton1ActionPerformed
 
-   private void updateLeaveStatus(String status) {
+    private void updateLeaveStatus(String status) {
         if (!currentUserRole.hasPermission(currentUserRole, Permission.ProcessLeave)) {
             JOptionPane.showMessageDialog(this, "You do not have permission to process leave.", "Access Denied", JOptionPane.ERROR_MESSAGE);
             return;
@@ -149,24 +171,42 @@ public class LeaveViewFrame extends javax.swing.JDialog {
             return;
         }
 
-        int leaveId = Integer.parseInt(leaveStatusTable.getValueAt(selectedRow, 0).toString());
+        String leaveIdToUpdate = leaveStatusTable.getValueAt(selectedRow, 0).toString();
+        List<String[]> updatedRows = new ArrayList<>();
 
-        boolean updated = new LeaveDaoImpl().updateLeaveStatus(leaveId, status);
+        try (CSVReader reader = new CSVReader(new FileReader("Leave Application.csv"))) {
+            String[] header = reader.readNext();
+            updatedRows.add(header);
 
-        if (updated) {
-            JOptionPane.showMessageDialog(this, "Leave status updated to: " + status);
-            updateLeaveStatusTable();
-        } else {
-            JOptionPane.showMessageDialog(this, "Failed to update leave status.");
+            String[] line;
+            while ((line = reader.readNext()) != null) {
+                if (line[0].equals(leaveIdToUpdate)) {
+                    line[9] = status; // Update the Application Status column
+                }
+                updatedRows.add(line);
+            }
+        } catch (IOException | CsvValidationException e) {
+            Logger.getLogger(LeaveViewFrame.class.getName()).log(Level.SEVERE, null, e);
+            JOptionPane.showMessageDialog(this, "Failed to update status.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+
+        try (CSVWriter writer = new CSVWriter(new FileWriter("Leave Application.csv"))) {
+            writer.writeAll(updatedRows);
+        } catch (IOException e) {
+            Logger.getLogger(LeaveViewFrame.class.getName()).log(Level.SEVERE, null, e);
+            JOptionPane.showMessageDialog(this, "Failed to write updated CSV.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        JOptionPane.showMessageDialog(this, "Leave status updated to: " + status);
+        updateLeaveStatusTable();
     }
+
 
     private void updateLeaveStatusTable() {
-        leaveStatusTable.setModel(LeaveDaoImpl.getLeaveStatusTableModel());
-    }
-
-   
-    
+        leaveStatusTable.setModel(loadLeaveStatusFromCSV());
+    } 
     
     /**
      * @param args the command line arguments

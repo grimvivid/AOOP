@@ -36,16 +36,23 @@ public class DeleteRecordFrame extends javax.swing.JDialog {
         this.currentUserRole = LoginResult.getCurrentUser().getRole();
         this.mainFrame = mainFrame; // Store the reference
         
-        staff = EmployeeDataUtil.fetchEmployeeDetails(employeenum);
+        EmployeeDaoImpl dao = new EmployeeDaoImpl();
+        int empId = Integer.parseInt(employeenum);
 
-        // Populate 
-        FieldPopulator.populateEmployeeFields(staff, new JTextField[]{
-            employeeNumberTF, lastNameTF, firstNameTF, birthdayTF, addressTF, phoneNumberTF,
-            SSSNumberTF, PhilHealthNumberTF, TINNumberTF, pagibigTF, superiorTF, basicSalaryTF,
-            riceAllowanceTF, phoneAllowanceTF, clothingAllowanceTF, semiMonthlyRateTF, hourlyRateTF
-        }, positionCB, statusCB);
+        dao.get(empId).ifPresentOrElse(emp -> {
+            this.staff = new Staff();
+            this.staff.populateFromEntity(emp);  // maps Employee to Staff
 
-        
+            FieldPopulator.populateEmployeeFields(staff, new JTextField[]{
+                employeeNumberTF, lastNameTF, firstNameTF, birthdayTF, addressTF, phoneNumberTF,
+                SSSNumberTF, PhilHealthNumberTF, TINNumberTF, pagibigTF, superiorTF, basicSalaryTF,
+                riceAllowanceTF, phoneAllowanceTF, clothingAllowanceTF, semiMonthlyRateTF, hourlyRateTF
+            }, positionCB, statusCB);
+
+        }, () -> {
+            JOptionPane.showMessageDialog(this, "Employee record not found in the database.", "Error", JOptionPane.ERROR_MESSAGE);
+            dispose();
+        });
        
     }
 
@@ -255,27 +262,39 @@ public class DeleteRecordFrame extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void DeleteRecord(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_DeleteRecord
-        // define roles for deletion
-       try {
-    Employee employeeToDelete = new Employee();
-    employeeToDelete.setEmployeeID(Integer.parseInt(employeeNumberTF.getText())); // Assuming it's numeric
+        if (!currentUserRole.hasPermission(currentUserRole, Permission.Delete)) {
+            JOptionPane.showMessageDialog(this, "You do not have permission to delete employee records.", "Access Denied", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-    // Use Hibernate DAO to delete
-    new EmployeeDaoImpl().delete(employeeToDelete);
+        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this employee?", "Confirm Deletion", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
 
-    JOptionPane.showMessageDialog(this, "Employee Record deleted from database.");
+        try {
+            int empId = Integer.parseInt(employeeNumberTF.getText());
+            EmployeeDaoImpl dao = new EmployeeDaoImpl();
 
-    if (mainFrame != null) {
-        mainFrame.updateEmployeeTable();
-    }
+            dao.get(empId).ifPresentOrElse(emp -> {
+                dao.delete(emp);
+                JOptionPane.showMessageDialog(this, "Employee Record deleted from database.");
 
-    dispose();
-} catch (Exception ex) {
-    Logger.getLogger(DeleteRecordFrame.class.getName()).log(Level.SEVERE, null, ex);
-    JOptionPane.showMessageDialog(this, "Failed to delete employee.", "Error", JOptionPane.ERROR_MESSAGE);
-}
+                if (mainFrame != null) {
+                    mainFrame.updateEmployeeTable();
+                }
 
+                dispose();
+            }, () -> {
+                JOptionPane.showMessageDialog(this, "Employee not found in the database.", "Error", JOptionPane.ERROR_MESSAGE);
+            });
+
+        } catch (Exception ex) {
+            Logger.getLogger(DeleteRecordFrame.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(this, "Failed to delete employee.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_DeleteRecord
+
 
         private void clearFields() {
             FormUtil.clearFields(employeeNumberTF, firstNameTF, lastNameTF, birthdayTF, addressTF, phoneNumberTF, 

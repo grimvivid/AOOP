@@ -1,22 +1,23 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
+
 package Frames;
 
-import com.mycompany.motorphgui2.Employees;
 import com.mycompany.motorphgui2.Staff;
-import com.opencsv.CSVReader;
+import com.mycompany.motorphgui2.dao.EmployeeDaoImpl;
+import com.mycompany.motorphgui2.dao.LeaveRequestDaoImpl;
+import com.mycompany.motorphgui2.entity.Employee;
+import com.mycompany.motorphgui2.entity.LeaveRequest;
 import com.opencsv.exceptions.CsvValidationException;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JOptionPane;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import javax.swing.JOptionPane;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.io.IOException;
+import java.io.FileNotFoundException;
 import javax.swing.table.TableModel;
+
 
 
 /**
@@ -395,75 +396,72 @@ public class LeaveFrame extends javax.swing.JDialog {
         dispose();
     }//GEN-LAST:event_Close
 
-    private void applybtn(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_applybtn
-                        
-           Staff staff = new Staff();
-           String filename = "Remaining_Leave.csv";
+    private void applybtn(java.awt.event.MouseEvent evt) {
+        String employeeNumber = employeeNumberTF.getText().trim();
+        String lastName = lastNameTF.getText().trim();
+        String firstName = firstNameTF.getText().trim();
+        String reason = reasonTF.getText().trim();
+        String fileDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        dateFiledTF.setText(fileDate);
+        String leaveType = leaveTypeCB.getSelectedItem().toString();
 
-           // Get values from text fields and combo boxes
-           String employeeNumber = employeeNumberTF.getText().trim();
-           String lastName = lastNameTF.getText().trim();
-           String firstName = firstNameTF.getText().trim();
-           String reason = reasonTF.getText().trim();
-           dateFiledTF.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")));
-           String fileDate = dateFiledTF.getText();
-           String leaveType = leaveTypeCB.getSelectedItem().toString();
+        // Validate fields
+        if (employeeNumber.isEmpty() || lastName.isEmpty() || firstName.isEmpty() || reason.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "All fields must be filled out, including the reason.", "Input Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-           // Get start and end dates from combo boxes
-           String startDate = String.format("%02d/%02d/%s",
-                   Integer.parseInt(month1CB.getSelectedItem().toString()),
-                   Integer.parseInt(day1CB.getSelectedItem().toString()),
-                   year1CB.getSelectedItem().toString());
+        // Get start and end dates
+        String startDateStr = String.format("%s-%s-%s", year1CB.getSelectedItem(), month1CB.getSelectedItem(), day1CB.getSelectedItem());
+        String endDateStr = String.format("%s-%s-%s", year2CB.getSelectedItem(), month2CB.getSelectedItem(), day2CB.getSelectedItem());
 
-           String endDate = String.format("%02d/%02d/%s",
-                   Integer.parseInt(month2CB.getSelectedItem().toString()),
-                   Integer.parseInt(day2CB.getSelectedItem().toString()),
-                   year2CB.getSelectedItem().toString());
+        try {
+            LocalDate startDate = LocalDate.parse(startDateStr);
+            LocalDate endDate = LocalDate.parse(endDateStr);
 
-           // === VALIDATION ===
-           if (employeeNumber.isEmpty() || lastName.isEmpty() || firstName.isEmpty() || reason.isEmpty()) {
-               JOptionPane.showMessageDialog(this, "All fields must be filled out, including the reason.", "Input Error", JOptionPane.ERROR_MESSAGE);
-               return; // Stop execution if any required field is empty
-           }
+            // Days calculation
+            int days = (int) (endDate.toEpochDay() - startDate.toEpochDay()) + 1;
+            if (days < 1) throw new IllegalArgumentException("End date must not be earlier than start date.");
 
-           // Set values to the staff object AFTER validation
-           staff.setEmployeeNumber(employeeNumber);
-           staff.setLastName(lastName);
-           staff.setFirstName(firstName);
+            daysCB.setSelectedItem(String.valueOf(days));
+            daysCB.setEnabled(true);
 
-           // Validate and calculate number of days
-           String days;
-           try {
-               days = staff.validateLeaveDate(startDate, endDate);
+            // Leave validation
+            if (!LeaveValidator.isLeaveAllowed(employeeNumber, leaveType, String.valueOf(days))) {
+                JOptionPane.showMessageDialog(this, "Applied leave exceeds remaining leave.", "Leave Unallowed", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-               // Set the calculated number of days in daysCB
-               daysCB.setSelectedItem(days); // Auto-populate calculated days
+            // Fetch Employee entity using employeeNumber (safe Optional handling)
+            EmployeeDaoImpl empDao = new EmployeeDaoImpl();
+            Employee employee = empDao.findByEmployeeNumber(employeeNumber)
+                .orElseThrow(() -> new RuntimeException("Employee not found for employee number: " + employeeNumber));
 
-           } catch (IllegalArgumentException e) {
-               JOptionPane.showMessageDialog(this, e.getMessage(), "Date Error", JOptionPane.ERROR_MESSAGE);
-               return; // Stop execution if dates are invalid
-           }
+            // Create and save LeaveRequest
+            LeaveRequest leaveRequest = new LeaveRequest();
+            leaveRequest.setEmployee(employee);
+            leaveRequest.setStartDate(startDate);
+            leaveRequest.setEndDate(endDate);
+            leaveRequest.setReason(reason);
+            leaveRequest.setLeaveType(leaveType);
+            leaveRequest.setFileDate(LocalDate.parse(fileDate));
+            leaveRequest.setStatus("PENDING");
 
-           try {
-               // Check if leave is allowed
-               if (LeaveValidator.isLeaveAllowed(employeeNumber, leaveType, days)) {
-    LeaveDaoImpl dao = new LeaveDaoImpl();
-    dao.applyLeave(employeeNumber, leaveType, days);
-    dao.createLeaveApplication(employeeNumber, fileDate, leaveType, days, startDate, endDate, reason);
+            LeaveRequestDaoImpl dao = new LeaveRequestDaoImpl();
+            dao.save(leaveRequest);
 
+            JOptionPane.showMessageDialog(this, "Leave submitted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            leaveTable.setModel(LeaveTableUtil.getLeaveTableModel(employeeNumber));
 
-                   JOptionPane.showMessageDialog(this, "Leave Submitted Successfully!", "Leave Application", JOptionPane.INFORMATION_MESSAGE);
-
-                   // Refresh leaveTable without clearing other fields
-                   leaveTable.setModel(staff.leaveDetails(filename));
-
-               } else {
-                   JOptionPane.showMessageDialog(this, "Applied Leave Exceeds Remaining Leave!", "Leave Unallowed", JOptionPane.ERROR_MESSAGE);
-               }
-           } catch (IOException | CsvValidationException ex) {
-               Logger.getLogger(LeaveFrame.class.getName()).log(Level.SEVERE, null, ex);
-           }  
-    }//GEN-LAST:event_applybtn
+        } catch (DateTimeParseException | IllegalArgumentException e) {
+            JOptionPane.showMessageDialog(this, "Invalid date format or logic: " + e.getMessage(), "Date Error", JOptionPane.ERROR_MESSAGE);
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Lookup Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            Logger.getLogger(LeaveFrame.class.getName()).log(Level.SEVERE, null, e);
+            JOptionPane.showMessageDialog(this, "Error saving leave request: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     /**
      * @param args the command line arguments
@@ -557,12 +555,40 @@ public class LeaveFrame extends javax.swing.JDialog {
     // End of variables declaration//GEN-END:variables
 
     private static class LeaveTableUtil {
+        public static javax.swing.table.TableModel getLeaveTableModel(String employeeNumber) {
+            String[] columnNames = {
+                "Leave ID", "Date Filed", "Employee Number", "Last Name",
+                "First Name", "Type of Leave", "Days", "Start Date",
+                "End Date", "Status", "Reason"
+            };
 
-        private static TableModel getLeaveTableModel(String employeeNumber) {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
+            java.util.List<String[]> filteredRows = new java.util.ArrayList<>();
 
-        public LeaveTableUtil() {
+            try (com.opencsv.CSVReader reader = new com.opencsv.CSVReader(new java.io.FileReader("Leave Application.csv"))) {
+                String[] nextLine;
+                boolean isHeader = true;
+
+                while ((nextLine = reader.readNext()) != null) {
+                    if (isHeader) {
+                        isHeader = false;
+                        continue; // Skip CSV header
+                    }
+
+                    if (nextLine.length >= 3 && nextLine[2].trim().equals(employeeNumber)) {
+                        filteredRows.add(nextLine);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            Object[][] data = new Object[filteredRows.size()][columnNames.length];
+            for (int i = 0; i < filteredRows.size(); i++) {
+                data[i] = filteredRows.get(i);
+            }
+
+            return new javax.swing.table.DefaultTableModel(data, columnNames);
         }
     }
+
 }

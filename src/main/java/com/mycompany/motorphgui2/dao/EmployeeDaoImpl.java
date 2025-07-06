@@ -84,4 +84,12 @@ public class EmployeeDaoImpl implements Dao<Employee, Integer> {
                           .list();
         }
     }
+    
+    public Optional<Employee> findByEmployeeNumber(String employeeNumber) {
+        try (Session session = SessionFactoryUtil.getSessionFactory().openSession()) {
+            return session.createQuery("FROM Employee WHERE employeeNumber = :empNo", Employee.class)
+                          .setParameter("empNo", employeeNumber)
+                          .uniqueResultOptional();
+        }
+    }
 }

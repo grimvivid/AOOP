@@ -27,20 +27,15 @@ public class AddEmployeeFrame extends javax.swing.JDialog {
     private MainFrame mainFrame; // 
     private Role currentUserRole;
     private Staff staff;
-   private String getNextEmployeeID() {
-    List<Employee> employees = new EmployeeDaoImpl().getAll();
-    int maxId = 0;
-    for (Employee emp : employees) {
-        try {
-            int id = Integer.parseInt(emp.getEmployeeNumber());
+    private String getNextEmployeeID() {
+        List<Employee> employees = new EmployeeDaoImpl().getAll();
+        int maxId = 0;
+        for (Employee emp : employees) {
+            int id = emp.getEmployeeNumber();
             if (id > maxId) maxId = id;
-        } catch (NumberFormatException ignored) {}
+        }
+        return String.valueOf(maxId + 1);
     }
-    return String.valueOf(maxId + 1);
-}
-
-
-    
     
     /**
      * Creates new form ViewRecordFrame
@@ -306,9 +301,7 @@ public class AddEmployeeFrame extends javax.swing.JDialog {
                staff.setSemiMonthlyRate(staff.validateNumber(semiMonthlyRateTF.getText(), "Semi-monthly Rate"));
                staff.setHourlyRate(staff.validateNumber(hourlyRateTF.getText(), "Hourly Rate"));
 
-               // === ADD EMPLOYEE TO CSV ===
-               new EmployeeDaoImpl().save(staff);
-
+               new EmployeeDaoImpl().save(staff.toEmployeeEntity());
 
                // === RESET FIELDS AFTER ADDING ===
                

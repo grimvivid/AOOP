@@ -1,53 +1,47 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package Frames;
 
-import com.mycompany.motorphgui2.EmployeeDataUtil;
 import com.mycompany.motorphgui2.Employees;
 import com.mycompany.motorphgui2.FieldPopulator;
 import com.mycompany.motorphgui2.Staff;
-import com.opencsv.exceptions.CsvValidationException;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import static java.lang.String.format;
-import java.text.ParseException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JOptionPane;
-import javax.swing.JTextField;
+import com.mycompany.motorphgui2.dao.EmployeeDaoImpl;
+import com.mycompany.motorphgui2.entity.Employee;
 
-/**
- *
- *
- */
+import javax.swing.*;
+import java.io.IOException;
+import java.text.ParseException;
+
 public class PayslipFrame extends javax.swing.JDialog {
 
-    /**
-     * Creates new form ViewRecordFrame
-     */
-    
-    
-    public PayslipFrame(Staff staff) {
+    private Staff staff; // cache Staff object for reuse
+
+    public PayslipFrame(String employeeNumber) {
         initComponents();
         this.setModalityType(ModalityType.APPLICATION_MODAL);
-        
-         // Populate fields using FieldPopulator
+
+        EmployeeDaoImpl dao = new EmployeeDaoImpl();
+        Employee employee = dao.get(Integer.parseInt(employeeNumber)).orElse(null);
+
+        if (employee == null) {
+            JOptionPane.showMessageDialog(this, "Employee not found!", "Error", JOptionPane.ERROR_MESSAGE);
+            dispose();
+            return;
+        }
+
+        staff = new Staff();
+        staff.populateFromEntity(employee);
+
+        // Populate read-only fields
         JTextField[] fields = {
             employeenumbertf, lastnametf, firstnametf, bdaytf, addresstf,
             phonenumtf, sssnumtf, phnumtf, tinnumtf, pagibigtf,
             supervisortf, basicsalarytf, ricetf, phonetf, clothingtf,
             semratetf, hourlyratetf
         };
-
         FieldPopulator.populateEmployeeFields(staff, fields, positioncb, statusCB);
     }
 
-    private PayslipFrame() {
+    private PayslipFrame() {}
         
-    }
     
 
     /**
@@ -475,82 +469,56 @@ public class PayslipFrame extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void showpaybtnMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_showpaybtnMouseClicked
+    private void showpaybtnMouseClicked(java.awt.event.MouseEvent evt) {
+        if (staff == null) {
+            JOptionPane.showMessageDialog(this, "Staff record not loaded.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-            String employeenum = employeenumbertf.getText().trim();
+        if (m1cb.getSelectedItem().equals("-") || d1cb.getSelectedItem().equals("-") || y1cb.getSelectedItem().equals("-") ||
+            m2cb.getSelectedItem().equals("-") || d2cb.getSelectedItem().equals("-") || y2cb.getSelectedItem().equals("-")) {
+            JOptionPane.showMessageDialog(this, "Please select valid Start and End dates.", "Invalid Dates", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-            if (employeenum.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please enter an Employee Number", "Missing Input", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
+        String start = m1cb.getSelectedItem().toString() + "/" +
+                       d1cb.getSelectedItem().toString() + "/" +
+                       y1cb.getSelectedItem().toString();
 
-            // Fetch employee details
-            Staff staff = EmployeeDataUtil.fetchEmployeeDetails(employeenum);
+        String end = m2cb.getSelectedItem().toString() + "/" +
+                     d2cb.getSelectedItem().toString() + "/" +
+                     y2cb.getSelectedItem().toString();
 
-            if (staff == null) {
-                JOptionPane.showMessageDialog(this, "Employee not found!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+        try {
+            float hw = staff.ComputeHoursWorked(start, end);
 
-            // Populate employee fields using FieldPopulator
-               JTextField[] fields = {
-               employeenumbertf, lastnametf, firstnametf, bdaytf, addresstf,
-               phonenumtf, sssnumtf, phnumtf, tinnumtf, pagibigtf,
-               supervisortf, basicsalarytf, ricetf, phonetf, clothingtf,
-               semratetf, hourlyratetf
-           };
+            salperiodtf.setText(start + " - " + end);
+            salearnedtf.setText(staff.computeSalaryEarned(hw));
+            riceallowtf.setText(staff.getRiceAllowance());
+            phoneallowtf.setText(staff.getPhoneAllowance());
+            clothingallowtf.setText(staff.getClothAllowance());
+            grosstf.setText(staff.computeGrossSalary(hw));
+            ssstf.setText(staff.computeSSS());
+            phtf.setText(staff.computePH());
+            pgbtf.setText(staff.computePGB());
+            taxtf.setText(staff.computeTax());
+            tdeducttf.setText(staff.computeTotalDeduct());
+            nettf.setText(staff.computeNet(hw));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Select valid dates or fix input error.", "Computation Failed", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
-             FieldPopulator.populateEmployeeFields(staff, fields, positioncb, statusCB);
-
-            // Get start and end dates
-            String start = m1cb.getSelectedItem().toString() + "/" +
-                           d1cb.getSelectedItem().toString() + "/" +
-                           y1cb.getSelectedItem().toString();
-
-            String end = m2cb.getSelectedItem().toString() + "/" +
-                         d2cb.getSelectedItem().toString() + "/" +
-                         y2cb.getSelectedItem().toString();
-
-            try {
-                float hw = staff.ComputeHoursWorked(start, end);
-                salperiodtf.setText(start + " - " + end);
-                salearnedtf.setText(staff.computeSalaryEarned(hw));
-                riceallowtf.setText(staff.getRiceAllowance());
-                phoneallowtf.setText(staff.getPhoneAllowance());
-                clothingallowtf.setText(staff.getClothAllowance());
-                grosstf.setText(staff.computeGrossSalary(hw));
-                ssstf.setText(staff.computeSSS());
-                phtf.setText(staff.computePH());
-                pgbtf.setText(staff.computePGB());
-                taxtf.setText(staff.computeTax());
-                tdeducttf.setText(staff.computeTotalDeduct());
-                nettf.setText(staff.computeNet(hw));
-
-            } catch (IOException | CsvValidationException | ParseException ex) {
-                JOptionPane.showMessageDialog(this, "Select Valid Dates", "Invalid Dates", JOptionPane.ERROR_MESSAGE);
-            }
-        
-    }//GEN-LAST:event_showpaybtnMouseClicked
-
-    private void closebtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closebtnActionPerformed
+    private void closebtnActionPerformed(java.awt.event.ActionEvent evt) {
         dispose();
-    }//GEN-LAST:event_closebtnActionPerformed
+    }
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
         dispose();
-    }//GEN-LAST:event_jButton1ActionPerformed
+    }
 
-    /**
-     * @param args the command line arguments
-     */
-    
-    
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -558,15 +526,11 @@ public class PayslipFrame extends javax.swing.JDialog {
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(PayslipFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(PayslipFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(PayslipFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+        } catch (Exception ex) {
             java.util.logging.Logger.getLogger(PayslipFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+
+        java.awt.EventQueue.invokeLater(() -> new PayslipFrame().setVisible(true));
         //</editor-fold>
         //</editor-fold>
         //</editor-fold>
