@@ -5,30 +5,20 @@
         
 <hibernate-configuration>
     <session-factory>
-
-        <!-- Database connection settings -->
         <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
         <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/payrollsystem_db</property>
         <property name="hibernate.connection.username">root</property>
-        <property name="hibernate.connection.password">Fernandojose.12</property>
-        
+        <property name="hibernate.connection.password">admin</property>
 
-        <!-- SQL dialect -->
         <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
-
-        <!-- Optional: Logging -->
         <property name="hibernate.show_sql">true</property>
         <property name="hibernate.format_sql">true</property>
-
-        <!-- Entity class mappings -->
-        <mapping class="com.mycompany.motorphgui2.entity.Employee"/>
-        <mapping class="com.mycompany.motorphgui2.entity.Payroll"/>
-        <mapping class="com.mycompany.motorphgui2.entity.Address"/>
-        <mapping class="com.mycompany.motorphgui2.entity.Attendance"/>
-        <mapping class="com.mycompany.motorphgui2.entity.Compensation"/>
-        <mapping class="com.mycompany.motorphgui2.entity.Deduction"/>
-        <mapping class="com.mycompany.motorphgui2.entity.LeaveRequest"/>
-        <mapping class="com.mycompany.motorphgui2.entity.PayPeriod"/>
+        <property name="hibernate.use_sql_comments">true</property>
+        
+        <property name="hibernate.current_session_context_class">thread</property>
+        <property name="hibernate.show_sql">true</property>
+		<property name="hibernate.format_sql">true</property>
 
     </session-factory>
 </hibernate-configuration>
+

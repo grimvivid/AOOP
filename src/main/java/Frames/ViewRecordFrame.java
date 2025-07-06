@@ -1,11 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package Frames;
 
-import com.mycompany.motorphgui2.EmployeeDataUtil;
-import com.mycompany.motorphgui2.Employees;
 import com.mycompany.motorphgui2.FieldPopulator;
 import com.mycompany.motorphgui2.FormUtil;
 import com.mycompany.motorphgui2.LoginResult;
@@ -13,59 +7,146 @@ import com.mycompany.motorphgui2.Permission;
 import com.mycompany.motorphgui2.Role;
 import com.mycompany.motorphgui2.Staff;
 import com.mycompany.motorphgui2.dao.EmployeeDaoImpl;
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvValidationException;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JOptionPane;
-import javax.swing.JTextField;
+import com.mycompany.motorphgui2.entity.Employee;
+import javax.swing.*;
 
-/**
- *
- * 
- */
 public class ViewRecordFrame extends javax.swing.JDialog {
 
-    /**
-     * Creates new form ViewRecordFrame
-     */
     private Role currentUserRole;
-    private Staff staff;
-    private MainFrame mainFrame; // 
-    private String filename;
+    private Staff staff = new Staff();
+    private MainFrame mainFrame;
 
-    
-    public ViewRecordFrame(String employeenum, MainFrame mainFrame) {
+    public ViewRecordFrame(String employeeNumber, MainFrame mainFrame) {
         initComponents();
         this.setModalityType(ModalityType.APPLICATION_MODAL);
         this.currentUserRole = LoginResult.getCurrentUser().getRole();
-        this.mainFrame = mainFrame; // Store the reference
-        
-        staff = EmployeeDataUtil.fetchEmployeeDetails(employeenum);
+        this.mainFrame = mainFrame;
 
-        // Populate the UI fields
-        FieldPopulator.populateEmployeeFields(staff, new JTextField[]{
-            employeeNumberTF, lastNameTF, firstNameTF, birthdayTF, addressTF, phoneNumberTF,
-            SSSNumberTF, PhilHealthNumberTF, TINNumberTF, pagibigTF, superiorTF, basicSalaryTF,
-            riceAllowanceTF, phoneAllowanceTF, clothingAllowanceTF, semiMonthlyRateTF, hourlyRateTF
-        }, positionCB, statusCB);
-
-  
+        EmployeeDaoImpl dao = new EmployeeDaoImpl();
+        int empId = Integer.parseInt(employeeNumber);
+        dao.get(empId).ifPresentOrElse(emp -> {
+            this.staff.populateFromEntity(emp);
+            FieldPopulator.populateEmployeeFields(staff, new JTextField[]{
+                    employeeNumberTF, lastNameTF, firstNameTF, birthdayTF, addressTF, phoneNumberTF,
+                    SSSNumberTF, PhilHealthNumberTF, TINNumberTF, pagibigTF, superiorTF, basicSalaryTF,
+                    riceAllowanceTF, phoneAllowanceTF, clothingAllowanceTF, semiMonthlyRateTF, hourlyRateTF
+            }, positionCB, statusCB);
+        }, () -> {
+            JOptionPane.showMessageDialog(this, "Employee record not found in the database.", "Error", JOptionPane.ERROR_MESSAGE);
+            dispose();
+        });
     }
 
-    private ViewRecordFrame() {
+    private void Update(java.awt.event.MouseEvent evt) {
+        if (!currentUserRole.hasPermission(currentUserRole, Permission.Update)) {
+            JOptionPane.showMessageDialog(this, "You do not have permission to edit employee records.", "Access Denied", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            staff.setEmployeeNumber(staff.validateEmployeeNumber(employeeNumberTF.getText()));
+            staff.setLastName(staff.validateName(lastNameTF.getText(), "Last Name"));
+            staff.setFirstName(staff.validateName(firstNameTF.getText(), "First Name"));
+            staff.setBirthday(staff.validateDate(birthdayTF.getText()));
+            staff.setAddress(staff.validateAddress(addressTF.getText()));
+            staff.setPhoneNumber(staff.validatePhoneNumber(phoneNumberTF.getText()));
+            staff.setSSSNumber(staff.validateSSSNumber(SSSNumberTF.getText()));
+            staff.setPhilHealthNumber(staff.validatePhilHealthNumber(PhilHealthNumberTF.getText()));
+            staff.setTIN(staff.validateTIN(TINNumberTF.getText()));
+            staff.setPagibigNumber(staff.validatePagibigNumber(pagibigTF.getText()));
+            staff.setStatus(staff.validateStatus(statusCB.getSelectedItem().toString()));
+            staff.setPosition(staff.validatePosition(positionCB.getSelectedItem().toString()));
+            staff.setSuperior(staff.validateName(superiorTF.getText(), "Superior"));
+            staff.setBasic(staff.validateNumber(basicSalaryTF.getText(), "Basic Salary"));
+            staff.setRiceAllowance(staff.validateNumber(riceAllowanceTF.getText(), "Rice Allowance"));
+            staff.setPhoneAllowance(staff.validateNumber(phoneAllowanceTF.getText(), "Phone Allowance"));
+            staff.setClothAllowance(staff.validateNumber(clothingAllowanceTF.getText(), "Clothing Allowance"));
+            staff.setSemiMonthlyRate(staff.validateNumber(semiMonthlyRateTF.getText(), "Semi-monthly Rate"));
+            staff.setHourlyRate(staff.validateNumber(hourlyRateTF.getText(), "Hourly Rate"));
+
+            EmployeeDaoImpl employeeDao = new EmployeeDaoImpl();
+            int empId = Integer.parseInt(employeeNumberTF.getText());
+            employeeDao.get(empId).ifPresentOrElse(dbEmployee -> {
+                Employee updated = staff.toEmployeeEntity();
+
+                dbEmployee.setFirstName(updated.getFirstName());
+                dbEmployee.setLastName(updated.getLastName());
+                dbEmployee.setBirthday(updated.getBirthday());
+                dbEmployee.setPhoneNumber(updated.getPhoneNumber());
+                dbEmployee.setStatus(updated.getStatus());
+                dbEmployee.setPosition(updated.getPosition());
+                dbEmployee.setImmediateSupervisor(updated.getImmediateSupervisor());
+
+                if (dbEmployee.getAddress() != null && updated.getAddress() != null) {
+                    dbEmployee.getAddress().setStreet(updated.getAddress().getStreet());
+                }
+
+                if (dbEmployee.getCompensation() != null && updated.getCompensation() != null) {
+                    dbEmployee.getCompensation().setBasicSalary(updated.getCompensation().getBasicSalary());
+                    dbEmployee.getCompensation().setRiceSubsidy(updated.getCompensation().getRiceSubsidy());
+                    dbEmployee.getCompensation().setPhoneAllowance(updated.getCompensation().getPhoneAllowance());
+                    dbEmployee.getCompensation().setClothingAllowance(updated.getCompensation().getClothingAllowance());
+                    dbEmployee.getCompensation().setGrossSemiMonthlyRate(updated.getCompensation().getGrossSemiMonthlyRate());
+                    dbEmployee.getCompensation().setHourlyRate(updated.getCompensation().getHourlyRate());
+                }
+
+                if (dbEmployee.getSss() != null && updated.getSss() != null) {
+                    dbEmployee.getSss().setSssNumber(updated.getSss().getSssNumber());
+                }
+
+                if (dbEmployee.getPhilHealth() != null && updated.getPhilHealth() != null) {
+                    dbEmployee.getPhilHealth().setPhilHealthNumber(updated.getPhilHealth().getPhilHealthNumber());
+                }
+
+                if (dbEmployee.getTax() != null && updated.getTax() != null) {
+                    dbEmployee.getTax().setTinNumber(updated.getTax().getTinNumber());
+                }
+
+                if (dbEmployee.getPagibig() != null && updated.getPagibig() != null) {
+                    dbEmployee.getPagibig().setPagibigNumber(updated.getPagibig().getPagibigNumber());
+                }
+
+                employeeDao.update(dbEmployee);
+
+                JOptionPane.showMessageDialog(this, "Record updated in the database!");
+
+                if (mainFrame != null) {
+                    mainFrame.updateEmployeeTable();
+                }
+
+                clearFields();
+                dispose();
+
+            }, () -> {
+                JOptionPane.showMessageDialog(this, "Could not find the employee to update.", "Error", JOptionPane.ERROR_MESSAGE);
+            });
+
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Input Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Something went wrong while updating the database.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
-    /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
-     */
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+
+    private void clearFields() {
+        FormUtil.clearFields(employeeNumberTF, firstNameTF, lastNameTF, birthdayTF, addressTF, phoneNumberTF,
+                SSSNumberTF, PhilHealthNumberTF, TINNumberTF, pagibigTF, superiorTF,
+                basicSalaryTF, riceAllowanceTF, phoneAllowanceTF, clothingAllowanceTF, semiMonthlyRateTF, hourlyRateTF);
+        FormUtil.clearComboBoxes(positionCB, statusCB);
+    }
+
+    private void close(java.awt.event.MouseEvent evt) {
+        dispose();
+    }
+
+    private void employeeNumberTFKeyTyped(java.awt.event.KeyEvent evt) {
+        if (!Character.isDigit(evt.getKeyChar())) {
+            evt.consume();
+        }
+    }
+
+private void initComponents() {
 
         employeeNumberLabel = new javax.swing.JLabel();
         lastNameLabel = new javax.swing.JLabel();
@@ -265,122 +346,6 @@ public class ViewRecordFrame extends javax.swing.JDialog {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-   
-
-    private void Update(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_Update
-        EmployeeDaoImpl employeeDao = new EmployeeDaoImpl();
-employeeDao.update(staff.toEmployeeEntity()); // assuming toEmployeeEntity() maps Staff to Employee
-
-        
-        if (!currentUserRole.hasPermission(currentUserRole, Permission.Update)) {
-            JOptionPane.showMessageDialog(this, "You do not have permission to edit employee records.", "Access Denied", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-       
-
-             try {
-                // === VALIDATION INTEGRATION ===
-                staff.setEmployeeNumber(staff.validateEmployeeNumber(employeeNumberTF.getText()));
-                staff.setLastName(staff.validateName(lastNameTF.getText(), "Last Name"));
-                staff.setFirstName(staff.validateName(firstNameTF.getText(), "First Name"));
-                staff.setBirthday(staff.validateDate(birthdayTF.getText()));
-                staff.setAddress(staff.validateAddress(addressTF.getText()));
-                staff.setPhoneNumber(staff.validatePhoneNumber(phoneNumberTF.getText()));
-                staff.setSSSNumber(staff.validateSSSNumber(SSSNumberTF.getText()));
-                staff.setPhilHealthNumber(staff.validatePhilHealthNumber(PhilHealthNumberTF.getText()));
-                staff.setTIN(staff.validateTIN(TINNumberTF.getText()));
-                staff.setPagibigNumber(staff.validatePagibigNumber(pagibigTF.getText()));
-                staff.setStatus(staff.validateStatus(statusCB.getSelectedItem().toString()));
-                staff.setPosition(staff.validatePosition(positionCB.getSelectedItem().toString()));
-                staff.setSuperior(staff.validateName(superiorTF.getText(), "Superior"));
-                staff.setBasic(staff.validateNumber(basicSalaryTF.getText(), "Basic Salary"));
-                staff.setRiceAllowance(staff.validateNumber(riceAllowanceTF.getText(), "Rice Allowance"));
-                staff.setPhoneAllowance(staff.validateNumber(phoneAllowanceTF.getText(), "Phone Allowance"));
-                staff.setClothAllowance(staff.validateNumber(clothingAllowanceTF.getText(), "Clothing Allowance"));
-                staff.setSemiMonthlyRate(staff.validateNumber(semiMonthlyRateTF.getText(), "Semi-monthly Rate"));
-                staff.setHourlyRate(staff.validateNumber(hourlyRateTF.getText(), "Hourly Rate"));
-
-                // === UPDATE EMPLOYEE IN CSV ===
-                staff.UpdateEmployee(filename);
-
-                // === RESET FORM AFTER UPDATE ===
-                clearFields();
-                JOptionPane.showMessageDialog(this, "Record Updated!");
-
-                if (mainFrame != null) {
-                    mainFrame.updateEmployeeTable();
-                }
-
-                dispose();
-
-            } catch (IllegalArgumentException | IOException  ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Input Error", JOptionPane.ERROR_MESSAGE);
-            } catch (CsvValidationException ex) {
-            Logger.getLogger(ViewRecordFrame.class.getName()).log(Level.SEVERE, null, ex);
-        }         
-    }//GEN-LAST:event_Update
- 
-    private void clearFields() {
-            FormUtil.clearFields(employeeNumberTF, firstNameTF, lastNameTF, birthdayTF, addressTF, phoneNumberTF, 
-                SSSNumberTF, PhilHealthNumberTF, TINNumberTF, pagibigTF, superiorTF, 
-                basicSalaryTF, riceAllowanceTF, phoneAllowanceTF, clothingAllowanceTF, semiMonthlyRateTF, hourlyRateTF
-            );
-
-            FormUtil.clearComboBoxes(positionCB,statusCB);
-        }
-    
-    
-    
-    
-    private void close(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_close
-        dispose();
-    }//GEN-LAST:event_close
-
-    private void employeeNumberTFKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_employeeNumberTFKeyTyped
-        char c = evt.getKeyChar();
-        if(!Character.isDigit(c)){
-            evt.consume();
-        }
-    }//GEN-LAST:event_employeeNumberTFKeyTyped
-
-    /**
-     * @param args the command line arguments
-     */
-    
-    
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(ViewRecordFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(ViewRecordFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(ViewRecordFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(ViewRecordFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new ViewRecordFrame().setVisible(true);
-            }
-        });
-    }
-
-   
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField PhilHealthNumberTF;

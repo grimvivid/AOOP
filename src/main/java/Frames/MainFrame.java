@@ -285,9 +285,9 @@ public class MainFrame extends javax.swing.JFrame {
             staff.getEmployeeNumber(),
             staff.getLastName(),
             staff.getFirstName(),
-            staff.getSSSNumber(),
+            staff.getSssNumber(),
             staff.getPhilHealthNumber(),
-            staff.getTIN(),
+            staff.getTinNumber(),
             staff.getPagibigNumber()
         });
     }

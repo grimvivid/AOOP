@@ -11,42 +11,6 @@ import java.util.Objects;
 @Table(name = "employee")
 public class Employee {
 
-    public String getEmployeeNumber() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    public Object getSSSNumber() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    public Object getPhilHealthNumber() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    public Object getTIN() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    public Object getPagibigNumber() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    public Object getEmployeeID() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    public Object getSssNumber() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    public Object getTinNumber() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    public void setEmployeeID(int parseInt) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
     public enum EmploymentStatus {
         REGULAR("Regular"),
         PROBATIONARY("Probationary");
@@ -68,6 +32,8 @@ public class Employee {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid status value: " + dbValue));
         }
     }
+
+    // === Fields ===
 
     @Id
     @Column(name = "EmployeeID")
@@ -103,12 +69,24 @@ public class Employee {
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payroll> payrolls = new ArrayList<>();
 
-    // Constructors
+    @OneToOne(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    private SSS sss;
+
+    @OneToOne(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    private PhilHealth philHealth;
+
+    @OneToOne(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Pagibig pagibig;
+
+    @OneToOne(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Tax tax;
+
+    // === Constructors ===
+
     public Employee() {
         // Required no-arg constructor
     }
 
-    // All-args constructor (for testing)
     public Employee(int employeeId, String firstName, String lastName, String position, EmploymentStatus status) {
         this.employeeId = employeeId;
         this.firstName = firstName;
@@ -117,7 +95,8 @@ public class Employee {
         setStatus(status);
     }
 
-    // Getters and Setters
+    // === Getters and Setters ===
+
     public int getEmployeeId() {
         return employeeId;
     }
@@ -158,7 +137,6 @@ public class Employee {
         this.phoneNumber = phoneNumber;
     }
 
-    // Status handling with enum
     public EmploymentStatus getStatus() {
         return EmploymentStatus.fromDbValue(this.status);
     }
@@ -167,12 +145,9 @@ public class Employee {
         this.status = status.getDbValue();
     }
 
-    // Legacy support for string status
     public void setStatus(String status) {
         if (!"Regular".equalsIgnoreCase(status) && !"Probationary".equalsIgnoreCase(status)) {
-            throw new IllegalArgumentException(
-                "Status must be either 'Regular' or 'Probationary'"
-            );
+            throw new IllegalArgumentException("Status must be either 'Regular' or 'Probationary'");
         }
         this.status = status;
     }
@@ -193,18 +168,15 @@ public class Employee {
         this.immediateSupervisor = immediateSupervisor;
     }
 
-    // Relationship management
     public Compensation getCompensation() {
         return compensation;
     }
 
     public void setCompensation(Compensation compensation) {
-        if (compensation == null) {
-            if (this.compensation != null) {
-                this.compensation.setEmployee(null);
-            }
-        } else {
+        if (compensation != null) {
             compensation.setEmployee(this);
+        } else if (this.compensation != null) {
+            this.compensation.setEmployee(null);
         }
         this.compensation = compensation;
     }
@@ -214,12 +186,10 @@ public class Employee {
     }
 
     public void setAddress(Address address) {
-        if (address == null) {
-            if (this.address != null) {
-                this.address.setEmployee(null);
-            }
-        } else {
+        if (address != null) {
             address.setEmployee(this);
+        } else if (this.address != null) {
+            this.address.setEmployee(null);
         }
         this.address = address;
     }
@@ -238,28 +208,103 @@ public class Employee {
         payroll.setEmployee(null);
     }
 
-    // equals() and hashCode()
+    public SSS getSss() {
+        return sss;
+    }
+
+    public void setSss(SSS sss) {
+        if (sss != null) {
+            sss.setEmployee(this);
+        } else if (this.sss != null) {
+            this.sss.setEmployee(null);
+        }
+        this.sss = sss;
+    }
+
+    public PhilHealth getPhilHealth() {
+        return philHealth;
+    }
+
+    public void setPhilHealth(PhilHealth philHealth) {
+        if (philHealth != null) {
+            philHealth.setEmployee(this);
+        } else if (this.philHealth != null) {
+            this.philHealth.setEmployee(null);
+        }
+        this.philHealth = philHealth;
+    }
+
+    public Pagibig getPagibig() {
+        return pagibig;
+    }
+
+    public void setPagibig(Pagibig pagibig) {
+        if (pagibig != null) {
+            pagibig.setEmployee(this);
+        } else if (this.pagibig != null) {
+            this.pagibig.setEmployee(null);
+        }
+        this.pagibig = pagibig;
+    }
+
+    public Tax getTax() {
+        return tax;
+    }
+
+    public void setTax(Tax tax) {
+        if (tax != null) {
+            tax.setEmployee(this);
+        } else if (this.tax != null) {
+            this.tax.setEmployee(null);
+        }
+        this.tax = tax;
+    }
+
+    public String getSssNumber() {
+        return sss != null ? sss.getSssNumber() : null;
+    }
+
+    public String getPhilHealthNumber() {
+        return philHealth != null ? philHealth.getPhilHealthNumber() : null;
+    }
+
+    public String getPagibigNumber() {
+        return pagibig != null ? pagibig.getPagibigNumber() : null;
+    }
+
+    public String getTinNumber() {
+        return tax != null ? tax.getTinNumber() : null;
+    }
+
+    public int getEmployeeID() {
+        return getEmployeeId();
+    }
+
+    public int getEmployeeNumber() {
+        return getEmployeeId();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Employee)) return false;
         Employee employee = (Employee) o;
-        return getEmployeeId() == employee.getEmployeeId();
+        return employeeId == employee.employeeId;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getEmployeeId());
+        return Objects.hash(employeeId);
     }
 
     @Override
     public String toString() {
         return "Employee{" +
-                "employeeId=" + employeeId +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", status='" + status + '\'' +
-                ", position='" + position + '\'' +
-                '}';
+               "employeeId=" + employeeId +
+               ", firstName='" + firstName + '\'' +
+               ", lastName='" + lastName + '\'' +
+               ", position='" + position + '\'' +
+               ", status='" + status + '\'' +
+               '}';
     }
 }
